@@ -12,7 +12,7 @@
 
 | Subsystem | Role | Component / specification | Qty |
 |---|---|---|---:|
-| Microcontroller | CanSat flight computer | ESP32 dev board, ESP32-WROOM-32, 30-pin, CP2102, Type-C | 1 |
+| Microcontroller | CanSat flight computer | ESP32 DevKit, 30-pin, CP2102, Type-C | 1 |
 | Microcontroller | Ground station | Same ESP32 board, powered from laptop USB | 1 |
 | Telemetry | CanSat ↔ ground station | HC-12 433 MHz wireless serial module, SI4463, UART, approx. 1 km open-air claim, spring antenna | 2 |
 | Sensor | Pressure + temperature | BMP280, I2C address 0x76/0x77 | 1 |
@@ -46,11 +46,11 @@
 
 ## 2. Confirmed communication architecture
 
-> **Update 2026-11-24 (D-020):** at the user's explicit direction the telemetry link is now **ESP-NOW directly between the two ESP32-WROOM-32 boards** (2.4 GHz, no router, no internet). The HC-12 modules are not used. The HC-12 text below is kept for history and is **superseded** for the current baseline. Implementation: `esp32/`; protocol and bring-up guide: `docs/10_esp32_espnow_bringup.md`. Link performance is not measured (OD-078).
+> **Update 2026-11-24 (D-020):** at the user's explicit direction the telemetry link is now **ESP-NOW directly between the two ESP32 DevKit boards** (2.4 GHz, no router, no internet). The HC-12 modules are not used. The HC-12 text below is kept for history and is **superseded** for the current baseline. Implementation: `esp32/`; protocol and bring-up guide: `docs/10_esp32_espnow_bringup.md`. Link performance is not measured (OD-078).
 
 
-- The CanSat flight computer is one ESP32-WROOM-32 board.
-- The ground station is a second ESP32-WROOM-32 board connected to a laptop over USB.
+- The CanSat flight computer is one ESP32 DevKit board.
+- The ground station is a second ESP32 DevKit board connected to a laptop over USB.
 - One HC-12 module is intended at the CanSat end and one at the ground-station end.
 - HC-12 communication is UART serial over a 433 MHz radio link.
 - The earlier PDR's ESP-NOW 2.4 GHz proposal is superseded by this user-confirmed HC-12 baseline unless the team later changes it.
@@ -100,7 +100,7 @@ SG90 servos have plastic gears. Verify the actual mechanical load and suitabilit
 
 ## 7. Pinout and wiring table
 
-No GPIO numbers are approved yet. Fill this only after identifying the exact ESP32-WROOM-32 development board and reviewing its pinout.
+No GPIO numbers are approved yet. Fill this only after identifying the exact ESP32 DevKit board and reviewing its pinout.
 
 | Function | ESP32 GPIO | Component | Status |
 |---|---|---|---|
@@ -137,7 +137,7 @@ The latest available PDR is still the team's source document, but this confirmed
 - PDR GY-91 / MPU9250 → MPU6050 / GY-521.
 - PDR pressure/temperature sensor arrangement → BMP280 pressure + temperature.
 - INA219 remains, now specified as address 0x40 with 0.1 Ω shunt.
-- PDR's broad ESP32 description is refined to ESP32-WROOM-32, 30-pin, CP2102, Type-C.
+- PDR's broad ESP32 description is refined to ESP32 DevKit, 30-pin, CP2102, Type-C.
 - Solar panels are now specified as two 4 V, 100 mA mini panels; dimensions and electrical role still need confirmation.
 - Limit switches and buzzers are explicitly included in the component baseline.
 

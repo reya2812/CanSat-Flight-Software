@@ -163,8 +163,14 @@ def parse_mp_identity(text):
             "role": d.get("ROLE") or None}
 
 
+def mpremote_base():
+    """Run mpremote through this Python, so it works even when the `mpremote`
+    script's folder is not on the terminal's PATH."""
+    return [sys.executable, "-m", "mpremote"]
+
+
 def mp_identity(port, run=subprocess.run):
-    r = run(["mpremote", "connect", port, "exec", MP_IDENTITY_SNIPPET], capture_output=True, text=True, timeout=60)
+    r = run(mpremote_base() + ["connect", port, "exec", MP_IDENTITY_SNIPPET], capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
         raise ToolError("mpremote could not run code on %s (exit %d): %s" % (port, r.returncode,
                                                                           ((r.stdout or "") + (r.stderr or ""))[-600:]))

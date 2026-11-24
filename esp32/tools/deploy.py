@@ -78,7 +78,7 @@ def mkdirs_snippet(pairs):
 
 
 def mpremote_commands(port, pairs):
-    cmd = ["mpremote", "connect", port, "exec", mkdirs_snippet(pairs)]
+    cmd = C.mpremote_base() + ["connect", port, "exec", mkdirs_snippet(pairs)]
     for src, dst in pairs:
         cmd += ["+", "fs", "cp", src, ":" + dst]
     return [cmd]
@@ -129,7 +129,7 @@ def main(argv=None, run=subprocess.run):
         C.append_record({"event": "deploy", "role": a.role, "mac": C.cs_util.format_mac(ident["mac"]),
                          "port": a.port, "micropython": ident["version"], "autorun": a.autorun,
                          "with_fsw": a.with_fsw})
-        print("deployed. Run: mpremote connect %s run esp32/apps/%s" % (a.port, ROLE_FILES[a.role]["main"]))
+        print("deployed. Run: python3 -m mpremote connect %s run esp32/apps/%s" % (a.port, ROLE_FILES[a.role]["main"]))
         return 0
     except C.ToolError as e:
         print("REFUSED: %s" % e)

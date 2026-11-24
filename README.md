@@ -5,8 +5,8 @@ Initial documentation workspace for the CanSat onboard firmware and ground-stati
 ## Current baseline
 - Existing code: none; starting from scratch.
 - Firmware: Arduino C++.
-- Flight computer: ESP32-WROOM-32, 30-pin, CP2102, Type-C.
-- Ground station: second matching ESP32-WROOM-32 board connected to laptop USB.
+- Flight computer: ESP32 DevKit, 30-pin, CP2102, Type-C.
+- Ground station: second matching ESP32 DevKit board connected to laptop USB.
 - Radio: ESP-NOW directly between the two ESP32s (D-020, 2026-11-24). HC-12 modules not used.
 - Board bring-up, ESP-NOW telemetry and diagnostics: `esp32/` — see `docs/10_esp32_espnow_bringup.md`.
 - Sensors: BMP280, MPU6050/GY-521, INA219.

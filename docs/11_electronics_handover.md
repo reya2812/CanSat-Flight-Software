@@ -19,7 +19,7 @@ Every result so far is a **bench observation**. Nothing is formally validated ye
 
 ## 2. Hardware you are working with
 
-**Two ESP32-WROOM-32 DevKit boards** (30-pin, CP2102 USB, USB-C). They look identical, so tell them apart by MAC address only. Serial port names change every time a board is replugged.
+**Two ESP32 DevKit boards** (30-pin, CP2102 USB, USB-C). They look identical, so tell them apart by MAC address only. Serial port names change every time a board is replugged.
 
 | Board | MAC address | Role |
 |---|---|---|

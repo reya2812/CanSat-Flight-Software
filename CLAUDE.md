@@ -4,7 +4,7 @@
 Onboard flight software and ground-station software for a CanSat/PocketQube mission. The latest available PDR is in `references/CanSat_PDR.pdf`; the user's explicit hardware baseline is documented in `docs/03_hardware_specification.md`.
 
 ## Confirmed baseline
-- Two ESP32-WROOM-32 development boards, 30-pin, CP2102, Type-C: one CanSat flight computer and one USB-connected ground-station board.
+- Two ESP32 DevKit boards, 30-pin, CP2102, Type-C: one CanSat flight computer and one USB-connected ground-station board.
 - MicroPython is the selected development environment (D-017, supersedes Arduino C++ / D-003). The C++ code in `firmware/` is the reference implementation until the port in `micropython/` matches it on all 17 synthetic scenarios; then archive it, never delete it. Approver names and date for D-017 are still [TBD].
 - Radio: **ESP-NOW directly between the two ESP32s** (D-020, user-directed 2026-11-24; approvers [TBD]). The HC-12 modules are not used. Bring-up/telemetry code lives in `esp32/` (D-021), outside the guarded `micropython/` tree.
 - BMP280 pressure/temperature sensor; I2C address 0x76 or 0x77.
@@ -21,7 +21,7 @@ Onboard flight software and ground-station software for a CanSat/PocketQube miss
 Never treat invoice listings as proof of installation or test success.
 
 ## Unresolved items
-- Exact ESP32-WROOM-32 development-board make/model/revision and GPIO pinout.
+- Exact ESP32 DevKit board make/model/revision and GPIO pinout.
 - ESP-NOW link performance (range, gap, enclosure attenuation) and the final Wi-Fi channel (OD-078). HC-12 items are moot while D-020 stands.
 - Exact BMP280 address (0x76 or 0x77).
 - Power topology for the two independent 1S cells, chargers, switches and boost converters.

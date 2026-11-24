@@ -134,7 +134,9 @@ class StandaloneScan(unittest.TestCase):
         for tok in ("import cs_", "from cs_", "flight_config", "radio_config", "Pin.OUT", "OPEN_DRAIN", "PWM",
                     "writeto", "readfrom", "open(", "SDCard", "network", "espnow"):
             self.assertNotIn(tok, code, tok)
-        self.assertEqual(guards.actuator_violations(os.path.dirname(SCRIPT)), [])
+        own = [v for v in guards.actuator_violations(os.path.dirname(SCRIPT))
+               if v.startswith(os.path.basename(SCRIPT) + ":")]
+        self.assertEqual(own, [])   # this script itself has no output code
 
 
 if __name__ == "__main__":

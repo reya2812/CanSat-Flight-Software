@@ -8,8 +8,8 @@ The latest available PDR describes a drone carrying the CanSat to approximately 
 ## Confirmed development setup
 - Existing code: none; starting from scratch.
 - Firmware language/framework: Arduino C++.
-- CanSat flight computer: ESP32-WROOM-32, 30-pin, CP2102, Type-C.
-- Ground station: second matching ESP32-WROOM-32 board connected to laptop USB.
+- CanSat flight computer: ESP32 DevKit, 30-pin, CP2102, Type-C.
+- Ground station: second matching ESP32 DevKit board connected to laptop USB.
 - Radio: HC-12 433 MHz UART modules, one at each end.
 - Sensors: BMP280 (pressure/temperature), MPU6050/GY-521 (IMU), INA219 (voltage/current).
 - Storage: Micro-SD SPI module and 16 GB card.

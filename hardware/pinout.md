@@ -2,7 +2,7 @@
 
 **Status (2026-11-24):** bring-up pins are **user-reported and UNVERIFIED** (OD-077). No pin is team-approved (OD-054). The flight configuration `micropython/cansat/config/hardware_config.py` keeps every pin TBD, and the guard scan enforces that. The bring-up pins live only in `esp32/config/flight_config.py` and `bringup/esp32_hw_diag.py`.
 
-Board: ESP32-WROOM-32 DevKit, 30-pin, CP2102, USB-C (exact make/revision TBD). An earlier version of this file said ESP32-S3; that was superseded by D-006.
+Board: ESP32 DevKit, 30-pin, CP2102, USB-C (exact make/revision TBD). An earlier version of this file said ESP32-S3; that was superseded by D-006.
 
 ## Board identities (user-confirmed 2026-11-24)
 

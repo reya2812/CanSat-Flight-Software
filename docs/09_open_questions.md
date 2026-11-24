@@ -1,7 +1,7 @@
 # 09 — Open Questions and Verification Register
 
 ## Priority 0 — Required before hardware-dependent firmware
-- [ ] Exact ESP32-WROOM-32 development-board manufacturer/model/revision and pinout?
+- [ ] Exact ESP32 DevKit board manufacturer/model/revision and pinout?
 - [ ] Confirm board labels/markings on both flight and ground-station boards.
 - [ ] Which GPIOs are allocated to I2C, HC-12 UART, SD SPI, servos, limit switches and buzzers?
 - [ ] Which HC-12 module pins are exposed and what is its exact supply/logic specification?
@@ -45,7 +45,7 @@ The user confirms there is no newer PDR. The latest available PDR remains the mi
 - ESP-NOW 2.4 GHz with HC-12 433 MHz UART.
 - GY-91 / MPU9250 with MPU6050 / GY-521.
 - PDR pressure/temperature arrangement with BMP280 pressure + temperature.
-- Generic ESP32 description with ESP32-WROOM-32 boards for flight and ground station.
+- Generic ESP32 description with ESP32 DevKit boards for flight and ground station.
 
 The PDR's mission profile, parachute design assumptions and descent targets remain source-derived design intent unless the team explicitly revises them.
 

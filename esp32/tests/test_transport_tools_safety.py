@@ -363,10 +363,32 @@ class Deploy(unittest.TestCase):
 class SafetyScan(unittest.TestCase):
     """Extends (does not replace) the cansat guard rules to the esp32/ tree."""
 
+    # D-022: the ONLY approved output code in esp32/. Open-drain on GPIO21/22 in this
+    # one bench file; every other output rule stays in force everywhere.
+    OUTPUT_EXCEPTION_FILE = "apps/pin_toggle.py"
+
     def test_no_actuator_output_code_in_esp32_tree(self):
         from cansat import guards
         v = guards.actuator_violations(fakes.ESP32)    # PWM, DAC, Pin.OUT/OPEN_DRAIN, servo/buzzer pins, is_physical
-        self.assertEqual(v, [])
+        allowed = [x for x in v if x.startswith(self.OUTPUT_EXCEPTION_FILE + ":")
+                   and "digital output 'Pin.OPEN_DRAIN'" in x]
+        self.assertEqual([x for x in v if x not in allowed], [])
+
+    def test_output_exception_is_open_drain_on_gpio21_22_only(self):
+        from cansat import guards
+        with open(os.path.join(fakes.ESP32, self.OUTPUT_EXCEPTION_FILE)) as f:
+            lines = guards.code_lines(f.read())
+        code = "\n".join(c for _, c in lines)
+        for tok in ("Pin.OUT", "PWM", "DAC", "UART", "SPI", "I2C(", "PIN_SERVO", "PIN_BUZZER", "import cs_"):
+            self.assertNotIn(tok, code, tok)
+        self.assertIn("SDA = 21", code)
+        self.assertIn("SCL = 22", code)
+        pins = [c.split("Pin(", 1)[1].split(",", 1)[0].strip() for _, c in lines if "Pin(" in c]
+        self.assertTrue(pins and set(pins) <= {"SDA", "SCL"}, pins)       # no literal or other pins
+        for _, c in lines:
+            if "Pin(" in c:
+                self.assertTrue("Pin.OPEN_DRAIN" in c or "Pin.IN" in c, c)
+        self.assertIn("finally:", code)                                    # always released
 
     def test_no_uart_servo_or_actuator_apis_referenced(self):
         from cansat import guards
@@ -377,6 +399,8 @@ class SafetyScan(unittest.TestCase):
                 for tok in ("PWM", "UART", "Pin.OUT", "Pin.OPEN_DRAIN", "DAC", "ActuatorDriver", "ActuatorManager",
                             "DeploymentInterlock", ".apply(", "PIN_SERVO", "PIN_BUZZER", "machine.WDT",
                             "cansat.mock", "cansat.sim", "ctypes"):
+                    if tok == "Pin.OPEN_DRAIN" and sub + "/" + rel == self.OUTPUT_EXCEPTION_FILE:
+                        continue   # D-022 exception, checked separately above
                     self.assertFalse(tok in code, "%s/%s uses %r" % (sub, rel, tok))
 
     def test_board_code_is_micropython_portable(self):

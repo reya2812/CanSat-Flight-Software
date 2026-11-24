@@ -1,6 +1,6 @@
 # Hardware bring-up diagnostic (bench check, NOT flight software)
 
-`esp32_hw_diag.py` is a standalone MicroPython script for checking the assembled sensor circuit on an ESP32 DevKit (ESP32-WROOM-32). It imports nothing from `micropython/cansat`, and the flight software never imports it. Its results are **bench observations, not flight validation**.
+`esp32_hw_diag.py` is a standalone MicroPython script for checking the assembled sensor circuit on an ESP32 DevKit. It imports nothing from `micropython/cansat`, and the flight software never imports it. Its results are **bench observations, not flight validation**.
 
 ## What it checks
 | Component | How | Writes to the device |

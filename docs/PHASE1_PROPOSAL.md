@@ -211,7 +211,7 @@ The link may be labelled feasible only after RF-01, RF-04 and RF-06 pass at the 
 
 | Constraint | Pins | Why it matters here |
 |---|---|---|
-| Strapping pins | GPIO0, 2, 5, 12, 15 | Their level at reset selects the boot mode. **GPIO12 pulled high selects 1.8 V flash, and the WROOM then fails to boot.** Never connect a pull-up device (such as a switch with a pull-up) to GPIO12. |
+| Strapping pins | GPIO0, 2, 5, 12, 15 | Their level at reset selects the boot mode. **GPIO12 pulled high selects 1.8 V flash, and the ESP32 DevKit then fails to boot.** Never connect a pull-up device (such as a switch with a pull-up) to GPIO12. |
 | Input-only, no internal pull-ups | GPIO34, 35, 36, 39 | Good for limit switches and UART RX/MISO, but **external pull-up resistors are required**. The resistor kit is not on the invoice (OD-040). |
 | Flash pins | GPIO6–11 | Never use them. They are usually not broken out on 30-pin boards. |
 | UART0 | GPIO1 (TX), 3 (RX) | Wired to the CP2102 USB bridge for programming and debug, so do not use them for the HC-12. The ESP32 has UART1 and UART2 available. |
@@ -568,5 +568,5 @@ The report will list the hardware tests still required (`docs/08` Stages 3–4, 
 |---|---|---|---|
 | D-013 | Arduino C++ on ESP32 is the firmware environment. This is a **deviation** from [PDR] slide 19 "ESP-IDF (C/C++)". A teammate's MicroPython suggestion was not adopted. | [TEAM DECISION] | Deviation recorded; supersedes the open note in D-003. |
 | D-014 | HC-12 433 MHz UART telemetry is a **deviation** from [PDR] ESP-NOW (slides 16, 17, 22). PDR range (≥150 m) and link-gap (≤1.0 s) targets still apply. | [TEAM DECISION] | Supersedes D-008. |
-| D-015 | D-002 (ESP32-S3) is superseded by D-006/D-009 (ESP32-WROOM-32). | Consistency | Housekeeping |
+| D-015 | D-002 (ESP32-S3) is superseded by D-006/D-009 (ESP32 DevKit). | Consistency | Housekeeping |
 | D-016 | Phases 1–2: physical actuation is disabled at compile time. No physical servo driver will be written until OD-059 is closed. | Safety | [RECOMMENDATION] awaiting approval |

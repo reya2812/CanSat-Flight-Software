@@ -28,7 +28,7 @@
 
 | Item | Version 1 | Version 2 | Status |
 |---|---|---|---|
-| MCU family | `DECISIONS.md` D-002: "Target ESP32-S3 board family"; `hardware/pinout.md`: "ESP32-S3 GPIO" column | `DECISIONS.md` D-006/D-009: ESP32-WROOM-32 | [TBD] D-002 looks superseded, but it is not marked that way. `hardware/pinout.md` still says ESP32-S3. |
+| MCU family | `DECISIONS.md` D-002: "Target ESP32-S3 board family"; `hardware/pinout.md`: "ESP32-S3 GPIO" column | `DECISIONS.md` D-006/D-009: ESP32 DevKit | [TBD] D-002 looks superseded, but it is not marked that way. `hardware/pinout.md` still says ESP32-S3. |
 | Radio | `DECISIONS.md` D-008: "Leave radio technology undecided" | D-010: HC-12 is the working baseline | [TBD] D-008 is not marked as superseded. |
 | Sensors in architecture | `docs/04` lists "GY-91", "BME280"; `docs/04` telemetry says "ESP-NOW transmission" | `docs/03`: BMP280 + MPU6050 + INA219, HC-12 | [TBD] `docs/04` is stale. |
 | Fault table | `docs/07`: "ESP-NOW send failure" | HC-12 baseline | [TBD] Stale. |
@@ -114,7 +114,7 @@
 
 | Team-reported item (`docs/03`) | Invoice line | Note |
 |---|---|---|
-| ESP32-WROOM-32, 30-pin, CP2102, Type-C ×2 | #1 "ESP-WROOM-32 ESP-32S Development Board 30-Pin WiFi + Bluetooth with CP2102 & Type-C" ×2 | Matches. The exact board vendor/revision is still TBD. |
+| ESP32 DevKit, 30-pin, CP2102, Type-C ×2 | #1 "ESP-WROOM-32 ESP-32S Development Board 30-Pin WiFi + Bluetooth with CP2102 & Type-C" ×2 | Matches. The exact board vendor/revision is still TBD. |
 | HC-12 ×2 | #2 "HC12 Long Range Wireless RF Transceiver Module 433Mhz SI4463" ×2 | Matches. |
 | BMP280, MPU6050/GY-521, INA219 | #3, #4 "…GY521", #10 "INA219 … CJMCU-219" | Matches. The INA219 breakout variant is CJMCU-219. |
 | SG90 ×3, 18650 2500 mAh ×2, holders ×2, TP4056 ×2, MT3608 ×3, toggle switch ×2 | #5, #6, #7, #8 "…with Current Protection – Type C", #11 "MT3608 … 2-24V to 5-28V 2A", #9 "6 Pin Toggle Switch 3A 250V" | Matches. |

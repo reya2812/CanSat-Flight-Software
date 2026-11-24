@@ -1,6 +1,6 @@
 # esp32/ — board bring-up, ESP-NOW telemetry, diagnostics
 
-Software for the two ESP32-WROOM-32 boards (flight + ground) running MicroPython. It is kept outside the guarded `micropython/` flight package (D-021). Full guide: [`docs/10_esp32_espnow_bringup.md`](../docs/10_esp32_espnow_bringup.md).
+Software for the two ESP32 DevKit boards (flight + ground) running MicroPython. It is kept outside the guarded `micropython/` flight package (D-021). Full guide: [`docs/10_esp32_espnow_bringup.md`](../docs/10_esp32_espnow_bringup.md).
 
 **Status:** software-tested on a laptop only. Nothing has run on an ESP32 yet. Nothing here drives a servo, buzzer or any output pin.
 
