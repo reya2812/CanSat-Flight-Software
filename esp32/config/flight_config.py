@@ -18,11 +18,12 @@ I2C_FREQ_HZ = 100000   # [BENCH DEFAULT] standard mode: most tolerant of long ju
 SD_SCK = 18
 SD_MISO = 19
 SD_MOSI = 23
-SD_CS = 13
+SD_CS = 5              # [USER 2026-11-24] moved from GPIO13 (D-023). GPIO5 is a strapping pin: see hardware/pinout.md
 SD_SLOT = 2            # [ASSUMPTION] machine.SDCard slot 2 = SPI mode on the ESP32 port
 SD_MOUNT_POINT = "/sd"
-# Leave False until the SD module's supply (3.3 V or 5 V input) and its logic
-# levels have been checked against THAT module's documentation/schematic.
+# User wiring 2026-11-24 (D-023): module VCC from the ESP32 VIN (5 V) pin, GND to GND.
+# Leave False until it is confirmed that THIS module is a 5 V-input type (own
+# 3.3 V regulator + level shifting), from its documentation/schematic.
 # While False nothing touches the card. Same gate as bringup/esp32_hw_diag.py.
 SD_SUPPLY_CONFIRMED = False
 

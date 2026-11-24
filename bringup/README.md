@@ -11,7 +11,7 @@
 | BMP280 (GY-91 on-board + standalone) | Identifies each by chip ID 0x58, reads its calibration, takes one forced measurement and converts it | ctrl_meas = 0x25 once (oversampling ×1, forced; a diagnostic choice, not a flight setting) |
 | Duplicate BMP280 addresses | Warns if fewer than the 2 expected BMP280s answer (see below) | — |
 | INA219 | Reads the config, shunt-voltage and bus-voltage registers only | none (read-only) |
-| SD card (SCK 18, MISO 19, MOSI 23, CS 13) | **Disabled by default (SKIP).** When enabled: `machine.SDCard` in SPI mode, mount, list the root, unmount | none (no files written) |
+| SD card (SCK 18, MISO 19, MOSI 23, CS 5) | **Disabled by default (SKIP).** When enabled: `machine.SDCard` in SPI mode, mount, list the root, unmount | none (no files written) |
 
 Not tested: the HC-12 (unavailable), servos, buzzers, batteries and deployment hardware. The script configures no outputs, PWM or DAC.
 

@@ -15,10 +15,10 @@ Board: ESP32 DevKit, 30-pin, CP2102, USB-C (exact make/revision TBD). An earlier
 |---|---|---|---|---|
 | I2C SDA | 21 | GY-91, standalone BMP280, INA219 (shared bus) | 3.3 V logic; pull-ups on the breakouts [UNVERIFIED] | user-reported, unverified |
 | I2C SCL | 22 | same | same | user-reported, unverified |
-| SD SPI SCK | 18 | micro-SD module | Module supply/level shifting must be checked against the module's own documentation | user-reported, unverified |
+| SD SPI SCK | 18 | micro-SD module | Module VCC from the ESP32 **VIN (5 V)** pin (user wiring, 2026-11-24). The module must be a 5 V-input type with its own 3.3 V regulator and level shifting; confirm that before enabling the SD test | user-reported, unverified |
 | SD SPI MISO | 19 | micro-SD module | same | user-reported, unverified |
 | SD SPI MOSI | 23 | micro-SD module | same | user-reported, unverified |
-| SD SPI CS | 13 | micro-SD module | GPIO13 is not a strapping pin [ASSUMPTION, PHASE1 §2.5] | user-reported, unverified |
+| SD SPI CS | 5 | micro-SD module | Moved from GPIO13 on 2026-11-24 (D-023). **GPIO5 is a strapping pin** (PHASE1 §2.5): it must not be held LOW at reset. An SD module normally keeps CS HIGH when idle [ASSUMPTION]. Check the board boots normally with the module connected | user-reported, unverified |
 | Servo signal(s) | TBD | SG90 | **Not driven by any software.** Never power a servo from a GPIO | TBD (OD-050) |
 | Limit switches | TBD | lever switches | — | TBD (OD-051) |
 | Buzzers | TBD | active buzzers | — | TBD (OD-052) |

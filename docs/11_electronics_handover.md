@@ -34,7 +34,8 @@ Please label both boards physically with their role and MAC if you haven't alrea
 |---|---|---|
 | I²C SDA | GPIO21 (D21) | GY-91, standalone BMP280, INA219 (one shared bus) |
 | I²C SCL | GPIO22 (D22) | same |
-| SD SCK / MISO / MOSI / CS | GPIO18 / 19 / 23 / 13 | micro-SD module |
+| SD SCK / MISO / MOSI / CS | GPIO18 / 19 / 23 / 5 | micro-SD module (CS moved from GPIO13, D-023) |
+| SD VCC / GND | VIN (5 V) / GND | micro-SD module. Only for a 5 V-input module (own regulator and level shifter) |
 | 3.3 V / GND | 3V3 / GND | breadboard rails |
 
 Expected I²C addresses:

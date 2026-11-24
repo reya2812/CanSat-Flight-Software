@@ -48,7 +48,7 @@ I2C_FREQ_HZ = 100000  # diagnostic choice: standard mode, the most tolerant spee
 SD_SCK = 18           # user-reported, unverified
 SD_MISO = 19          # user-reported, unverified
 SD_MOSI = 23          # user-reported, unverified
-SD_CS = 13            # user-reported, unverified
+SD_CS = 5             # user-reported, unverified
 SD_SLOT = 2           # [ASSUMPTION] machine.SDCard slot 2 = SPI mode on the ESP32 port
 SD_MOUNT_POINT = "/sd"
 # Leave False until the SD module's supply and logic-level compatibility with

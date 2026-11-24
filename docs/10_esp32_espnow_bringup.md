@@ -44,11 +44,11 @@ The pins are **user-reported and unverified** (OD-077). They live in `esp32/conf
 | Function | Flight ESP32 GPIO | Device |
 |---|---|---|
 | I2C SDA / SCL | 21 / 22 | GY-91, standalone BMP280, INA219 (one shared bus, 100 kHz) |
-| SD SCK / MISO / MOSI / CS | 18 / 19 / 23 / 13 | SPI micro-SD module |
+| SD SCK / MISO / MOSI / CS | 18 / 19 / 23 / 5 | SPI micro-SD module |
 | Servo | **none configured** | must stay unpowered or disconnected during all of this work |
 
 Before powering anything:
-1. **SD module supply:** read the module's own documentation or schematic. Some modules need 5 V on VCC (onboard regulator and level shifter); others are 3.3 V-only. Do not assume either. Until this is confirmed, `SD_SUPPLY_CONFIRMED = False` keeps the software away from the card.
+1. **SD module supply:** the user's wiring (2026-11-24, D-023) feeds the module's VCC from the ESP32 **VIN (5 V)** pin. That suits only a 5 V-input module (onboard 3.3 V regulator and level shifter); a 3.3 V-only module must not get 5 V. Confirm which type this module is from its documentation or schematic. VIN carries 5 V only while the board is powered from USB or a 5 V source. Until this is confirmed, `SD_SUPPLY_CONFIRMED = False` keeps the software away from the card.
 2. **I2C supply:** every I2C breakout must be powered so that its SDA/SCL pull-ups go to **3.3 V**, not 5 V.
 3. **Two BMP280s:** a BMP280 answers only at 0x76 or 0x77, set by its SDO/address strap. The GY-91's barometer and the standalone breakout must use **different** addresses. Two devices at the same address answer together, the data may be silently corrupted, and software cannot detect it (§6.3).
 4. **INA219:** connect nothing to VIN+/VIN- until a monitored circuit is decided. The software reports no voltage or current until you declare the wiring (§6.4).
