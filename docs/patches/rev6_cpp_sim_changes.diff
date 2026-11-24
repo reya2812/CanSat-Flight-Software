@@ -1,0 +1,374 @@
+diff -ruN -x build firmware/Makefile firmware/Makefile
+--- firmware/Makefile	2026-11-18 23:44:46
++++ firmware/Makefile	2026-11-18 23:01:27
+@@ -20,7 +20,7 @@
+ SIM_SRCS := sim/FlightProfile.cpp sim/SimRunner.cpp sim/FswHook.cpp sim/scenarios/SyntheticScenarios.cpp \
+             sim/scenarios/SyntheticFlightParams.cpp $(CORE_SRCS)
+ 
+-.PHONY: test check-guards all-checks sim sim-one matrix clean
++.PHONY: test check-guards all-checks sim sim-one matrix traces clean
+ 
+ $(BUILD)/test_step1: test/test_step1_config_types.cpp $(HEADERS)
+ 	@mkdir -p $(BUILD)
+@@ -46,9 +46,9 @@
+ 	@mkdir -p $(BUILD)
+ 	$(CXX) $(CXXFLAGS) test/test_recovery_faults.cpp $(SIM_SRCS) -o $@
+ 
+-$(BUILD)/sim_runner: sim/sim_main.cpp $(SIM_SRCS) $(HEADERS)
++$(BUILD)/sim_runner: sim/sim_main.cpp sim/TraceExporter.cpp $(SIM_SRCS) $(HEADERS)
+ 	@mkdir -p $(BUILD)
+-	$(CXX) $(CXXFLAGS) sim/sim_main.cpp $(SIM_SRCS) -o $@
++	$(CXX) $(CXXFLAGS) sim/sim_main.cpp sim/TraceExporter.cpp $(SIM_SRCS) -o $@
+ 
+ test: $(BUILD)/test_step1 $(BUILD)/test_step2 $(BUILD)/test_step3 $(BUILD)/test_step3_review \
+       $(BUILD)/test_interlock $(BUILD)/test_recovery_faults
+@@ -72,6 +72,10 @@
+ 
+ matrix: $(BUILD)/sim_runner
+ 	./$(BUILD)/sim_runner matrix
++
++# Parity traces for the MicroPython port (D-017) -> build/trace/  [SIMULATED]
++traces: $(BUILD)/sim_runner
++	./$(BUILD)/sim_runner trace-all
+ 
+ clean:
+ 	rm -rf $(BUILD)
+diff -ruN -x build firmware/README.md firmware/README.md
+--- firmware/README.md	2026-11-18 23:44:46
++++ firmware/README.md	2026-11-18 23:09:22
+@@ -18,6 +18,7 @@
+ make matrix              # every scenario x every OD-060 policy, flight software in the loop
+ ./build/sim_runner run-fsw stuck_switch_released A   # one run, policy A/B/C/G
+ ./build/sim_runner list  # list scenarios
++make traces              # parity traces for the MicroPython port (D-017) -> build/trace/
+ ```
+ 
+ Every simulation result is **SIMULATED, not hardware validation**. All sensor values in scenarios are **SYNTHETIC**.
+@@ -45,3 +46,8 @@
+   - active faults;
+   - events (`SEGMENT`, `MARK`, `FAULT_ON`/`FAULT_OFF`, `RESET`, `BOOTING`, `BOOT_COMPLETE`, `BEGIN`).
+ - **`MARK:` lines are script annotations**, not flight-software events.
++- **Health columns (Rev 6):** `baro_comm_ok`, `baro_data_ready`, `imu_comm_ok`, `imu_data_ready`, `pwr_comm_ok`, `pwr_data_ready` sit between `sw2_raw` and `active_faults`.
++
++## Parity trace (`build/trace/<scenario>__<policy>.trace`, Rev 6)
++
++Machine-readable reference output for the MicroPython port: every sensor frame at full float32 precision, boots, resets, store faults, every flight-software event and the state after each tick. Format: `sim/TraceExporter.h`. The C++ code is the reference implementation until the port matches it (D-017).
+diff -ruN -x build firmware/sim/FswHook.h firmware/sim/FswHook.h
+--- firmware/sim/FswHook.h	2026-11-18 23:44:46
++++ firmware/sim/FswHook.h	2026-11-18 23:01:05
+@@ -52,6 +52,8 @@
+   void setStoreFaults(const std::vector<StoreFaultAtReset>& f) { store_faults_ = f; }
+ 
+   const FswStats& stats() const { return stats_; }
++  // Read-only view for the parity trace exporter (sim/TraceExporter). nullptr while rebooting.
++  const FlightSoftware* fsw() const { return fsw_.get(); }
+   mock::MockPersistentStore& store() { return store_; }
+ 
+  private:
+diff -ruN -x build firmware/sim/SimRunner.cpp firmware/sim/SimRunner.cpp
+--- firmware/sim/SimRunner.cpp	2026-11-18 23:44:46
++++ firmware/sim/SimRunner.cpp	2026-11-18 23:00:34
+@@ -16,6 +16,7 @@
+     "imu_valid,imu_sat,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,"
+     "pwr_valid,bus_v,i_ma,"
+     "sw_valid,sw1_raw,sw2_raw,"
++    "baro_comm_ok,baro_data_ready,imu_comm_ok,imu_data_ready,pwr_comm_ok,pwr_data_ready,"
+     "active_faults,events";
+ 
+ namespace {
+@@ -145,7 +146,7 @@
+ 
+     if (clock.booting()) {
+       ++sum.booting_rows;
+-      row += ",,,,,,,,,,,,,,,,,";  // no readings while rebooting (17 empty fields)
++      row += ",,,,,,,,,,,,,,,,,,,,,,,";  // no readings while rebooting (23 empty fields)
+       appendToken(events, "BOOTING");
+       extra = hook ? hook->emptyColumns() : std::string();
+     } else {
+@@ -161,10 +162,13 @@
+       if (!s.valid) ++sum.switch_invalid;
+       char buf[384];
+       std::snprintf(buf, sizeof buf,
+-                    "%d,%.1f,%.2f,%d,%d,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%d,%.3f,%.1f,%d,%d,%d,",
++                    "%d,%.1f,%.2f,%d,%d,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%d,%.3f,%.1f,%d,%d,%d,"
++                    "%d,%d,%d,%d,%d,%d,",
+                     b.valid ? 1 : 0, b.pressure_pa, b.temp_c, m.valid ? 1 : 0, m.saturated ? 1 : 0,
+                     m.ax_g, m.ay_g, m.az_g, m.gx_dps, m.gy_dps, m.gz_dps, p.valid ? 1 : 0, p.bus_v,
+-                    p.current_ma, s.valid ? 1 : 0, s.raw[0] ? 1 : 0, s.raw[1] ? 1 : 0);
++                    p.current_ma, s.valid ? 1 : 0, s.raw[0] ? 1 : 0, s.raw[1] ? 1 : 0,
++                    b.comm_ok ? 1 : 0, b.data_ready ? 1 : 0, m.comm_ok ? 1 : 0, m.data_ready ? 1 : 0,
++                    p.comm_ok ? 1 : 0, p.data_ready ? 1 : 0);
+       row += buf;
+       if (hook) {
+         SensorFrame frame;
+diff -ruN -x build firmware/sim/TraceExporter.cpp firmware/sim/TraceExporter.cpp
+--- firmware/sim/TraceExporter.cpp	1970-01-01 05:30:00
++++ firmware/sim/TraceExporter.cpp	2026-11-18 23:01:05
+@@ -0,0 +1,99 @@
++#include "TraceExporter.h"
++
++#include <cstdio>
++
++namespace cansat {
++namespace sim {
++
++namespace {
++const char* b01(bool v) { return v ? "1" : "0"; }
++}  // namespace
++
++TraceHook::TraceHook(FlightSoftwareHook& inner, ILogSink& trace,
++                     const std::vector<StoreFaultAtReset>& store_faults)
++    : inner_(inner), trace_(trace), store_faults_(store_faults) {}
++
++void TraceHook::line(const std::string& s) {
++  if (!trace_.append(s.c_str())) ++write_failures_;
++}
++
++void TraceHook::events(uint32_t uptime_ms) {
++  const FlightSoftware* f = inner_.fsw();
++  if (!f) return;
++  char buf[96];
++  for (int i = 0; i < f->eventCount(); ++i) {
++    const Event& e = f->eventAt(i);
++    std::snprintf(buf, sizeof buf, "E,%u,%u,%u,%u,%u", boot_, uptime_ms, static_cast<unsigned>(e.type),
++                  e.t_ms, e.detail);
++    line(buf);
++  }
++}
++
++void TraceHook::stateLine(uint32_t uptime_ms) {
++  const FlightSoftware* f = inner_.fsw();
++  if (!f) return;
++  char buf[96];
++  std::snprintf(buf, sizeof buf, "S,%u,%u,%u,%u,%u", boot_, uptime_ms, static_cast<unsigned>(f->state()),
++                static_cast<unsigned>(f->chuteStatus()), f->faultMask());
++  line(buf);
++}
++
++std::string TraceHook::onBoot(bool baro_ok, bool imu_ok, bool power_ok, uint32_t uptime_ms) {
++  ++boot_;
++  char buf[96];
++  // FlightSoftwareHook never runs the IMU self-test, so the report is NotRun (0).
++  std::snprintf(buf, sizeof buf, "B,%u,%u,%s,%s,%s,%u", boot_, uptime_ms, b01(baro_ok), b01(imu_ok),
++                b01(power_ok), static_cast<unsigned>(SelfTestResult::NotRun));
++  line(buf);
++  const std::string r = inner_.onBoot(baro_ok, imu_ok, power_ok, uptime_ms);
++  events(uptime_ms);
++  stateLine(uptime_ms);
++  return r;
++}
++
++void TraceHook::onReset() {
++  std::string kinds;
++  for (const StoreFaultAtReset& f : store_faults_) {
++    if (f.reset_index != resets_) continue;
++    if (!kinds.empty()) kinds += "+";
++    kinds += std::to_string(static_cast<unsigned>(f.kind));
++  }
++  char buf[64];
++  std::snprintf(buf, sizeof buf, "R,%u,%s", static_cast<unsigned>(resets_), kinds.empty() ? "0" : kinds.c_str());
++  line(buf);
++  ++resets_;
++  inner_.onReset();
++}
++
++std::string TraceHook::onTick(const SensorFrame& fr, uint32_t uptime_ms) {
++  char buf[512];
++  const BaroSample& b = fr.baro;
++  const ImuSample& m = fr.imu;
++  const PowerSample& p = fr.power;
++  const SwitchSample& s = fr.switches;
++  std::snprintf(buf, sizeof buf,
++                "F,%u,%u,%u,%.9g,%.9g,%s,%s,%s,%u,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%s,%s,%s,%s,"
++                "%u,%.9g,%.9g,%s,%s,%s,%u,%s,%s,%s",
++                boot_, uptime_ms, b.t_ms, static_cast<double>(b.pressure_pa), static_cast<double>(b.temp_c),
++                b01(b.valid), b01(b.comm_ok), b01(b.data_ready), m.t_ms, static_cast<double>(m.ax_g),
++                static_cast<double>(m.ay_g), static_cast<double>(m.az_g), static_cast<double>(m.gx_dps),
++                static_cast<double>(m.gy_dps), static_cast<double>(m.gz_dps), b01(m.valid), b01(m.saturated),
++                b01(m.comm_ok), b01(m.data_ready), p.t_ms, static_cast<double>(p.bus_v),
++                static_cast<double>(p.current_ma), b01(p.valid), b01(p.comm_ok), b01(p.data_ready), s.t_ms,
++                b01(s.raw[0]), b01(s.raw[1]), b01(s.valid));
++  line(buf);
++  const std::string r = inner_.onTick(fr, uptime_ms);
++  events(uptime_ms);
++  stateLine(uptime_ms);
++  return r;
++}
++
++std::string traceHeader(const std::string& scenario, const std::string& policy) {
++  return "# SIMULATED - not hardware validation. SYNTHETIC data and parameters.\n"
++         "# cansat parity trace v" + std::to_string(kTraceFormatVersion) + "\n"
++         "# scenario: " + scenario + "\n"
++         "# policy: " + policy;
++}
++
++}  // namespace sim
++}  // namespace cansat
+diff -ruN -x build firmware/sim/TraceExporter.h firmware/sim/TraceExporter.h
+--- firmware/sim/TraceExporter.h	1970-01-01 05:30:00
++++ firmware/sim/TraceExporter.h	2026-11-18 23:01:05
+@@ -0,0 +1,70 @@
++// TraceExporter.h — machine-readable parity trace for the MicroPython port (D-017).
++// [SIMULATED] Laptop only. Wraps FlightSoftwareHook without changing it and
++// records, per run:
++//   - every SensorFrame given to the flight software, at full float32 precision
++//     ("%.9g" round-trips a 32-bit float), including t_ms, comm_ok, data_ready;
++//   - every boot report, reset and scripted store fault;
++//   - every flight-software event (type, t_ms, detail) and the state / chute
++//     status / fault mask after each tick.
++// The MicroPython port replays the F lines into its own flight software and
++// compares its E and S lines against these.
++//
++// Line format (version 1), one record per line, comma separated:
++//   B,<boot>,<uptime_ms>,<baro_ok>,<imu_ok>,<power_ok>,<imu_self_test>
++//   R,<reset_index>,<store_fault>          store_fault: 0 none, else StoreFaultKind code(s) '+'-joined
++//   F,<boot>,<uptime_ms>,
++//     <baro t_ms,pressure_pa,temp_c,valid,comm_ok,data_ready>,
++//     <imu t_ms,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,valid,saturated,comm_ok,data_ready>,
++//     <power t_ms,bus_v,current_ma,valid,comm_ok,data_ready>,
++//     <switches t_ms,raw0,raw1,valid>
++//   E,<boot>,<uptime_ms>,<event_type>,<event_t_ms>,<detail>
++//   S,<boot>,<uptime_ms>,<state>,<chute_status>,<fault_mask>
++// All enum values are numeric codes from lib/core/Types.h.
++#pragma once
++
++#include <stdint.h>
++
++#include <string>
++#include <vector>
++
++#include "FswHook.h"
++#include "HalInterfaces.h"
++#include "Scenario.h"
++#include "SimRunner.h"
++
++namespace cansat {
++namespace sim {
++
++constexpr int kTraceFormatVersion = 1;
++
++class TraceHook : public ISimHook {
++ public:
++  TraceHook(FlightSoftwareHook& inner, ILogSink& trace, const std::vector<StoreFaultAtReset>& store_faults);
++
++  std::string extraHeader() const override { return inner_.extraHeader(); }
++  std::string bannerLine() const override { return inner_.bannerLine(); }
++  std::string onBoot(bool baro_ok, bool imu_ok, bool power_ok, uint32_t uptime_ms) override;
++  void onReset() override;
++  std::string onTick(const SensorFrame& frame, uint32_t uptime_ms) override;
++  std::string emptyColumns() const override { return inner_.emptyColumns(); }
++
++  uint32_t writeFailures() const { return write_failures_; }
++
++ private:
++  void line(const std::string& s);
++  void events(uint32_t uptime_ms);
++  void stateLine(uint32_t uptime_ms);
++
++  FlightSoftwareHook& inner_;
++  ILogSink& trace_;
++  std::vector<StoreFaultAtReset> store_faults_;
++  uint32_t boot_ = 0;
++  size_t resets_ = 0;
++  uint32_t write_failures_ = 0;
++};
++
++// Header comment lines for a trace file.
++std::string traceHeader(const std::string& scenario, const std::string& policy);
++
++}  // namespace sim
++}  // namespace cansat
+diff -ruN -x build firmware/sim/sim_main.cpp firmware/sim/sim_main.cpp
+--- firmware/sim/sim_main.cpp	2026-11-18 23:44:46
++++ firmware/sim/sim_main.cpp	2026-11-18 23:01:27
+@@ -5,6 +5,8 @@
+ //   sim_runner run-all [--dir <dir>]               sensors only, every scenario
+ //   sim_runner run-fsw <scenario> <A|B|C|G>        flight software in the loop (Step 3)
+ //   sim_runner matrix                              every scenario x every OD-060 policy
++//   sim_runner trace <scenario> <A|B|C|G>          parity trace for the MicroPython port (D-017)
++//   sim_runner trace-all                           parity traces, every scenario x every policy
+ //
+ // Writes CSV logs under build/sim/ and prints summaries to stdout.
+ // Actuator logic is disabled: requests are only logged as NOT_EXECUTED.
+@@ -16,6 +18,7 @@
+ #include "FileLogSink.h"
+ #include "FswHook.h"
+ #include "SimRunner.h"
++#include "TraceExporter.h"
+ #include "scenarios/SyntheticFlightParams.h"
+ #include "scenarios/SyntheticScenarios.h"
+ 
+@@ -27,7 +30,8 @@
+ int usage() {
+   std::printf(
+       "usage: sim_runner list | run <scenario> [--out file] | run-all [--dir dir] |\n"
+-      "                  run-fsw <scenario> <A|B|C|G> | matrix\n");
++      "                  run-fsw <scenario> <A|B|C|G> | matrix |\n"
++      "                  trace <scenario> <A|B|C|G> | trace-all\n");
+   return 2;
+ }
+ 
+@@ -81,6 +85,28 @@
+   return s.log_write_failures == 0 ? 0 : 1;
+ }
+ 
++// Parity trace (TraceExporter.h) plus the matching CSV, under build/trace/.
++int runTrace(const Scenario& sc, StuckSwitchPolicy pol) {
++  mkdir("build", 0755);
++  mkdir("build/trace", 0755);
++  const std::string base = "build/trace/" + sc.name + "__" + toString(pol);
++  FileLogSink trace((base + ".trace").c_str());
++  FileLogSink csv((base + ".csv").c_str());
++  if (!trace.ok() || !csv.ok()) {
++    std::printf("cannot open %s.*\n", base.c_str());
++    return 1;
++  }
++  trace.append(traceHeader(sc.name, toString(pol)).c_str());
++  FlightSoftwareHook inner(syntheticFlightParams(pol));
++  inner.setStoreFaults(sc.store_faults);
++  TraceHook hook(inner, trace, sc.store_faults);
++  SimRunner runner;
++  const SimSummary s = runner.run(sc, csv, &hook);
++  trace.flush();
++  std::printf("%s.trace\n", base.c_str());
++  return (s.log_write_failures == 0 && hook.writeFailures() == 0) ? 0 : 1;
++}
++
+ }  // namespace
+ 
+ int main(int argc, char** argv) {
+@@ -121,6 +147,21 @@
+     StuckSwitchPolicy pol;
+     if (!findSyntheticScenario(argv[2], sc) || !parsePolicy(argv[3], pol)) return usage();
+     return runFsw(sc, pol, true, nullptr);
++  }
++  if (cmd == "trace" && argc >= 4) {
++    Scenario sc;
++    StuckSwitchPolicy pol;
++    if (!findSyntheticScenario(argv[2], sc) || !parsePolicy(argv[3], pol)) return usage();
++    return runTrace(sc, pol);
++  }
++  if (cmd == "trace-all") {
++    int rc = 0;
++    for (const Scenario& sc : everySyntheticScenario()) {
++      for (StuckSwitchPolicy pol : candidatePolicies()) {
++        if (runTrace(sc, pol) != 0) rc = 1;
++      }
++    }
++    return rc;
+   }
+   if (cmd == "matrix") {
+     std::printf("# SIMULATED - not hardware validation. SYNTHETIC scenarios and parameters.\n");
+diff -ruN -x build firmware/test/test_step2_sim.cpp firmware/test/test_step2_sim.cpp
+--- firmware/test/test_step2_sim.cpp	2026-11-18 23:44:46
++++ firmware/test/test_step2_sim.cpp	2026-11-18 23:00:34
+@@ -75,7 +75,8 @@
+   return r;
+ }
+ enum Col { cT = 0, cBoot, cUp, cSeg, cAlt, cVz, cMounted, cBV, cP, cTemp, cIV, cISat, cAx, cAy, cAz,
+-           cGx, cGy, cGz, cPV, cBus, cI, cSV, cSw1, cSw2, cFaults, cEvents, kCols };
++           cGx, cGy, cGz, cPV, cBus, cI, cSV, cSw1, cSw2, cBComm, cBReady, cIComm, cIReady, cPComm, cPReady,
++           cFaults, cEvents, kCols };
+ 
+ static SimSummary runScenario(const std::string& name, MemoryLogSink& log) {
+   Scenario sc;

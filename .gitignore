@@ -1,0 +1,24 @@
+# Build outputs
+build/
+dist/
+.pio/
+.arduino/
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Local secrets and machine-specific settings
+.env
+.env.*
+!.env.example
+
+# Test and generated data
+__pycache__/
+.pytest_cache/
+*.pyc
+*.log
+
+# Contains personal contact and bank details: keep local, never publish
+references/components_invoice_photo.png
